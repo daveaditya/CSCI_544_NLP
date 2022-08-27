@@ -1,0 +1,7 @@
+# Ignore environment files
+.venv
+.vscode
+.python-version
+
+# Ignore Data file
+data
