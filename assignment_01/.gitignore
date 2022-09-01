@@ -2,6 +2,7 @@
 .venv
 .vscode
 .python-version
+.ipynb_checkpoints
 
 # Ignore Data file
 data
