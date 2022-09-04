@@ -254,9 +254,7 @@ def main():
 
         # Perform all the cleaning functions sequencially
         for func in pipeline:
-            print(f"Starting: {func.__name__}")
             temp_data = func(temp_data)
-            print(f"Ended: {func.__name__}")
 
         # Replace the old column with cleaned one.
         cleaned_data[col] = temp_data
@@ -283,14 +281,10 @@ def main():
 
         # Perform all the cleaning functions sequencially
         for func in pipeline:
-            print(f"Starting: {func.__name__}")
-
             if func.__name__ == "wordnet_lemmatizer":
                 temp_data = func(temp_data, consider_pos_tag=False)
             else:
                 temp_data = func(temp_data)
-
-            print(f"Ended: {func.__name__}")
 
         # Replace the old column with cleaned one.
         preprocessed_data[col] = temp_data.copy()
