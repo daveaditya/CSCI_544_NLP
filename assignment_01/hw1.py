@@ -2,7 +2,7 @@
 
 # Python version used 3.10.6
 
-from typing import List, Optional
+from typing import List, Optional, Set
 import pandas as pd
 import numpy as np
 import nltk
@@ -12,10 +12,16 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import train_test_split
 
 
+##############################################################################
+### Defining Constants
+##############################################################################
+
 DATA_PATH = "./data.tsv"
 DATA_COL = "review_body"
 TARGET_COL = "star_rating"
-N_SAMPLES = 25000
+N_SAMPLES = 21000
+N_SAMPLES_ACTUAL = 20000
+RANDOM_SEED = 42
 
 
 ##############################################################################
@@ -25,6 +31,17 @@ N_SAMPLES = 25000
 def to_lower(data: pd.Series):
     return data.str.lower()
 
+# Remove HTML encodings
+def remove_html_encodings(data: pd.Series):
+  return data.str.replace(r"&#\d+;", " ", regex=True)
+
+# Remove HTML tags (both open and closed)
+def remove_html_tags(data: pd.Series):
+  return data.str.replace(r"<[a-zA-Z]+\s?/?>", " ", regex=True)
+
+# Remove URLs
+def remove_url(data: pd.Series):
+  return data.str.replace(r"https?://([\w\-\._]+){2,}/[\w\-\.\-/=\+_\?]+", " ", regex=True)
 
 def remove_accented_characters(data: pd.Series):
     import unicodedata
@@ -42,33 +59,9 @@ def remove_accented_characters(data: pd.Series):
     return data.apply(lambda x: unicodedata.normalize("NFKD", x).encode("ascii", "ignore").decode("utf-8", "ignore"))
 
 
-def remove_html_and_url(data: pd.Series):
-    """Function to remove
-             1. HTML encodings
-             2. HTML tags (both closed and open)
-             3. URLs
-
-    Args:
-        data (pd.Series): A Pandas series of type string
-
-    Returns:
-        _type_: pd.Series
-    """
-    # Remove HTML encodings
-    data.str.replace(r"&#\d+;", " ", regex=True)
-
-    # Remove HTML tags (both open and closed)
-    data.str.replace(r"<[a-zA-Z]+\s?/?>", " ", regex=True)
-
-    # Remove URLs
-    data.str.replace(r"https?://([\w\-\._]+){2,}/[\w\-\.\-/=\+_\?]+", " ", regex=True)
-
-    return data
-
 # Handle emoji
 def convert_emoji_to_txt(data: pd.Series):
   from emot.emo_unicode import UNICODE_EMOJI, EMOTICONS_EMO
-  import re
 
   EMO_TO_TXT_DICT = dict()
   for emot in UNICODE_EMOJI:
@@ -84,10 +77,13 @@ def convert_emoji_to_txt(data: pd.Series):
 
   return data.apply(lambda x: convert_emojis(x, EMO_TO_TXT_DICT))
 
+# Replaces numbers with NUM tag
+def replace_digits_with_tag(data: pd.Series):  
+  return data.str.replace(r"\d+", " NUM ", regex=True)
 
 # Remove non-alphabetical characters
-def remove_non_alpa_characters(data: pd.Series):
-    return data.str.replace(r"_+|\\|[^a-zA-Z\s]", " ", regex=True)
+def remove_non_alpha_characters(data: pd.Series):
+    return data.str.replace(r"_+|\\|[^a-zA-Z0-9\s]", " ", regex=True)
 
 
 # Remove extra spaces
@@ -209,12 +205,10 @@ def concatenate(data: pd.Series):
 def calc_metrics(y_true, y_pred):
     from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
-    accuracy_score = accuracy_score(y_true, y_pred)
+    accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average=None)
     recall = recall_score(y_true, y_pred, average=None)
     f1 = f1_score(y_true, y_pred, average=None)
-
-    print(f"{accuracy_score}")
 
     for rating_precision, rating_recall, rating_f1 in zip(precision, recall, f1):
         print(f"{rating_precision},{rating_recall},{rating_f1}")
@@ -246,21 +240,27 @@ def main():
     ##############################################################################
     ### Sample data
     ##############################################################################
-    sampled_data = data.groupby(TARGET_COL, group_keys=False).apply(lambda x: x.sample(N_SAMPLES))
+    sampled_data = data.groupby(TARGET_COL, group_keys=False).apply(lambda x: x.sample(N_SAMPLES, random_state=RANDOM_SEED))
+    sampled_data.reset_index(inplace=True)
+    sampled_data.drop(columns=["index"], inplace=True)
 
     ##############################################################################
     ### Cleaning
     ##############################################################################
 
     avg_len_before_cleaning = sampled_data.review_body.str.len().mean()
+
+    # A dictionary containing the columns and a list of functions to perform on it in order
     data_cleaning_pipeline = {
-        "review_body": [
-            to_lower,
+        DATA_COL: [
             convert_emoji_to_txt,
+            to_lower,
             remove_accented_characters,
-            remove_html_and_url,
+            remove_html_encodings,
+            remove_html_tags,
+            remove_url,
             fix_contractions,
-            remove_non_alpa_characters,
+            remove_non_alpha_characters,
             remove_extra_spaces,
         ]
     }
@@ -270,26 +270,27 @@ def main():
     # Process all the cleaning instructions
     for col, pipeline in data_cleaning_pipeline.items():
         # Get the column to perform cleaning on
-        temp_data = data[col]
+        temp_data = cleaned_data[col].copy()
 
         # Perform all the cleaning functions sequencially
         for func in pipeline:
             temp_data = func(temp_data)
 
         # Replace the old column with cleaned one.
-        cleaned_data[col] = temp_data
+        cleaned_data[col] = temp_data.copy()
+
 
     avg_len_after_cleaning = cleaned_data.review_body.str.len().mean()
 
-    print(f"{avg_len_before_cleaning,avg_len_after_cleaning}")
+    print(f"{avg_len_before_cleaning},{avg_len_after_cleaning}")
 
     #####################################################################################
     ### Preprocessing
-    #####################################################################################
+    ###################################################################################
 
     avg_len_before_preprocessing = cleaned_data[DATA_COL].str.len().mean()
 
-    preprocessing_pipeline = {"review_body": [tokenize, lemmatize, concatenate]}
+    preprocessing_pipeline = {DATA_COL: [tokenize, lemmatize, concatenate]}
 
     # Run the pipeline
     preprocessed_data = cleaned_data.copy()
@@ -297,7 +298,7 @@ def main():
     # Process all the cleaning instructions
     for col, pipeline in preprocessing_pipeline.items():
         # Get the column to perform cleaning on
-        temp_data = preprocessed_data[col].copy()
+        temp_data = preprocessed_data[col]
 
         # Perform all the cleaning functions sequencially
         for func in pipeline:
@@ -313,65 +314,95 @@ def main():
         # Replace the old column with cleaned one.
         preprocessed_data[col] = temp_data.copy()
 
+
     avg_len_after_preprocessing = preprocessed_data[DATA_COL].str.len().mean()
 
     print(f"{avg_len_before_preprocessing},{avg_len_after_preprocessing}")
 
     # Drop empty strings
-    preprocessed_data = preprocessed_data[preprocessed_data["review_body"].str.len() != 0]
+    preprocessed_data = preprocessed_data[preprocessed_data[DATA_COL].str.len() != 0]
     # Drop NA reviews
-    preprocessed_data.dropna(subset=["review_body"], inplace=True)
+    preprocessed_data.dropna(subset=[DATA_COL], inplace=True)
 
-    # Split
-    data = preprocessed_data.groupby("star_rating", group_keys=False).apply(lambda x: x.sample(20000))
+    # Split resample the data
+    data = preprocessed_data.groupby(TARGET_COL, group_keys=False).apply(lambda x: x.sample(N_SAMPLES_ACTUAL, random_state=RANDOM_SEED))
+    data.reset_index(inplace=True)
+    data.drop(columns=["index"], inplace=True)
+
+    # 80-20 train split
     train, test = train_test_split(data, test_size=0.2, stratify=data["star_rating"])
 
     #####################################################################################
     ### Feature Extraction
-    #####################################################################################
+    ###################################################################################
 
     from sklearn.feature_extraction.text import TfidfVectorizer
+    from nltk.tokenize import word_tokenize
 
-    vectorizer = TfidfVectorizer()
-    vectorizer.fit(train["review_body"])
+    nltk.download("punkt")
 
-    X_tfidf_train = vectorizer.transform(train["review_body"])
-    X_tfidf_test = vectorizer.transform(test["review_body"])
-    y_train = train["star_rating"]
-    y_test = test["star_rating"]
+    vectorizer = TfidfVectorizer(tokenizer=word_tokenize)
+    vectorizer.fit(train[DATA_COL])
+
+    X_tfidf_train = vectorizer.transform(train[DATA_COL])
+    X_tfidf_test = vectorizer.transform(test[DATA_COL])
+    y_train = train[TARGET_COL]
+    y_test = test[TARGET_COL]
+
 
     #####################################################################################
     ### Models
-    #####################################################################################
+    ###################################################################################
+
     # 1. Perceptron
-    perceptron_clf = Perceptron()
-    perceptron_clf.fit(X_tfidf_train, y_train)
+    from sklearn.linear_model import Perceptron
 
-    y_pred = perceptron_clf.predict(X_tfidf_test)
+    class_weight = {1: 0.29525, 2: 16.45725, 3: 8.6525, 4: 1, 5: 0.8585}
+    clf = Perceptron(max_iter=8000, alpha=0.01, random_state=RANDOM_SEED, tol=1e-5, early_stopping=True, class_weight=class_weight)
 
-    calc_metrics(y_test, y_pred)
+    clf.fit(X_tfidf_train, y_train)
 
-    # 2. Logistic Regression
-    perceptron_clf = LogisticRegression()
-    perceptron_clf.fit(X_tfidf_train, y_train)
-
-    y_pred = perceptron_clf.predict(X_tfidf_test)
+    y_pred = clf.predict(X_tfidf_test)
 
     calc_metrics(y_test, y_pred)
 
-    # 4. SVM
-    svm_clf = LinearSVC()
-    svm_clf.fit(X_tfidf_train, y_train)
 
-    y_pred = svm_clf.predict(X_tfidf_test)
+    # 2. SVM
+    from sklearn.svm import LinearSVC
+
+    class_weight = {1: 0.29525, 2: 7.45725, 3: 4.6525, 4: 1, 5: 0.8585}
+
+    clf = LinearSVC(dual=False, C=0.1, max_iter=200, class_weight=class_weight, random_state=RANDOM_SEED)
+
+    clf.fit(X_tfidf_train, y_train)
+
+    y_pred = clf.predict(X_tfidf_test)
 
     calc_metrics(y_test, y_pred)
 
-    # 5. Naive Bayes
-    nb_clf = MultinomialNB()
-    nb_clf.fit(X_tfidf_train, y_train)
 
-    y_pred = nb_clf.predict(X_tfidf_test)
+    # 3. Logistic Regression
+    from sklearn.linear_model import LogisticRegression
+
+    class_weight = {1: 1, 2: 1, 3: 1, 4: 1, 5: 1.1024} # 0.5172256481829293
+
+    clf = LogisticRegression(penalty='l2', solver="saga", max_iter=100, multi_class="multinomial", C=0.25055, random_state=RANDOM_SEED, class_weight=class_weight)
+
+    clf.fit(X_tfidf_train, y_train)
+
+    y_pred = clf.predict(X_tfidf_test)
+
+    calc_metrics(y_test, y_pred)
+
+
+    # 4. Naive Bayes
+    from sklearn.naive_bayes import MultinomialNB
+
+    clf = MultinomialNB(alpha=34.89886)
+
+    clf.fit(X_tfidf_train, y_train)
+
+    y_pred = clf.predict(X_tfidf_test)
 
     calc_metrics(y_test, y_pred)
 
