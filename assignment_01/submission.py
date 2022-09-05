@@ -65,6 +65,25 @@ def remove_html_and_url(data: pd.Series):
 
     return data
 
+# Handle emoji
+def convert_emoji_to_txt(data: pd.Series):
+  from emot.emo_unicode import UNICODE_EMOJI, EMOTICONS_EMO
+  import re
+
+  EMO_TO_TXT_DICT = dict()
+  for emot in UNICODE_EMOJI:
+    EMO_TO_TXT_DICT[emot] = f" {re.sub(r',|:|_', '', UNICODE_EMOJI[emot])} "
+
+  for emo in EMOTICONS_EMO:
+    EMO_TO_TXT_DICT[emot] = f" {re.sub(r',| ', '', EMOTICONS_EMO[emo])} "
+
+  def convert_emojis(text, emo_to_txt_dict):
+    for emot in emo_to_txt_dict:
+        text = text.replace(emot, emo_to_txt_dict[emot])
+    return text
+
+  return data.apply(lambda x: convert_emojis(x, EMO_TO_TXT_DICT))
+
 
 # Remove non-alphabetical characters
 def remove_non_alpa_characters(data: pd.Series):
@@ -237,6 +256,7 @@ def main():
     data_cleaning_pipeline = {
         "review_body": [
             to_lower,
+            convert_emoji_to_txt,
             remove_accented_characters,
             remove_html_and_url,
             fix_contractions,
@@ -269,7 +289,7 @@ def main():
 
     avg_len_before_preprocessing = cleaned_data[DATA_COL].str.len().mean()
 
-    preprocessing_pipeline = {DATA_COL: [tokenize, lemmatize, concatenate]}
+    preprocessing_pipeline = {"review_body": [tokenize, lemmatize, concatenate]}
 
     # Run the pipeline
     preprocessed_data = cleaned_data.copy()
@@ -281,10 +301,14 @@ def main():
 
         # Perform all the cleaning functions sequencially
         for func in pipeline:
-            if func.__name__ == "wordnet_lemmatizer":
-                temp_data = func(temp_data, consider_pos_tag=False)
+            print(f"Starting: {func.__name__}")
+
+            if func.__name__ == "lemmatize":
+                temp_data = func(temp_data, consider_pos_tag=True)
             else:
                 temp_data = func(temp_data)
+
+            print(f"Ended: {func.__name__}")
 
         # Replace the old column with cleaned one.
         preprocessed_data[col] = temp_data.copy()
@@ -294,7 +318,8 @@ def main():
     print(f"{avg_len_before_preprocessing},{avg_len_after_preprocessing}")
 
     # Drop empty strings
-    preprocessed_data["review_body"].replace("", np.nan, inplace=True)
+    preprocessed_data = preprocessed_data[preprocessed_data["review_body"].str.len() != 0]
+    # Drop NA reviews
     preprocessed_data.dropna(subset=["review_body"], inplace=True)
 
     # Split
