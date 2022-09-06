@@ -35,7 +35,6 @@ jupyter-core==4.11.1
 jupyter_client==7.3.5
 jupyterlab-pygments==0.2.2
 jupyterlab-widgets==3.0.2
-jupyternotify==0.1.15
 kiwisolver==1.4.4
 lxml==4.9.1
 MarkupSafe==2.1.1
