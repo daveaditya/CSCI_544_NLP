@@ -6,3 +6,6 @@
 
 # Ignore Data file
 data
+
+# Ignore submission directory
+submission
