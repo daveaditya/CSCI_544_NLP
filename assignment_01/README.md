@@ -65,7 +65,7 @@ In addition to tuning the model, the cleaning and preprocessing pipeline were mo
 
 ## Results
 
-Based on the cleaning -> preprocessing -> model training described above, the Linear SVM model outperformed other models.
+Based on the cleaning -> preprocessing -> model training described above, the Logistic Regression model outperformed other models.
 
 ## Conclusion
 
