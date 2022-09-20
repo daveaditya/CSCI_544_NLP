@@ -23,6 +23,7 @@ entrypoints==0.4
 executing==0.10.0
 fastjsonschema==2.16.1
 fonttools==4.37.1
+gensim==4.2.0
 idna==3.3
 ipykernel==6.15.1
 ipython==8.4.0
@@ -77,11 +78,14 @@ pyzmq==23.2.1
 qtconsole==5.3.2
 QtPy==2.2.0
 regex==2022.8.17
+requests==2.28.1
 scikit-learn==1.1.2
 scipy==1.9.1
+seaborn==0.12.0
 Send2Trash==1.8.0
 six==1.16.0
 sklearn==0.0
+smart-open==6.2.0
 soupsieve==2.3.2.post1
 stack-data==0.5.0
 terminado==0.15.0
@@ -89,9 +93,12 @@ textsearch==0.0.21
 threadpoolctl==3.1.0
 tinycss2==1.1.1
 tomli==2.0.1
+torch==1.12.1
+torchvision==0.13.1
 tornado==6.2
 tqdm==4.64.0
 traitlets==5.3.0
+typing_extensions==4.3.0
 urllib3==1.26.12
 wcwidth==0.2.5
 webencodings==0.5.1
