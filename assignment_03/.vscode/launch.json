@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "HMM Learn - Italian",
+            "type": "python",
+            "request": "launch",
+            "program": "./hmmlearn.py",
+            "args": ["ITALIAN"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "HMM Decode - Italian",
+            "type": "python",
+            "request": "launch",
+            "program": "./hmmdecode.py",
+            "args": ["ITALIAN"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "HMM Learn - Japanese",
+            "type": "python",
+            "request": "launch",
+            "program": "./hmmlearn.py",
+            "args": ["JAPANESE"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "HMM Decode - Japanese",
+            "type": "python",
+            "request": "launch",
+            "program": "./resource/lax_decode.py",
+            "args": ["JAPANESE"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
