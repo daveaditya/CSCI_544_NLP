@@ -32,6 +32,8 @@ MODEL_FILE = f"{OUTPUT_PATH}/hmmmodel.txt"
 
 START_TAG = "<ST@RT$>"
 
+SMOOTHING_PARAMETER = 1.0
+OPEN_CLASS_PRECENT = 1.0
 
 ###################################################################
 ### Helper Functions
@@ -52,18 +54,37 @@ def write_model(
     out_file_path: str,
     words: List[str],
     tags: List[str],
+    open_class_tags: List[str],
     tag_counts: Dict[str, int],
     transition_probabilities,
     transition_matrix_labels,
     emission_probabilities,
     emission_matrix_row_labels,
     emission_matrix_col_labels,
+    smoothing_parameter,
 ):
+    """Writes the model parameters to a txt file in JSON format
+
+    Args:
+        out_file_path (str): output model path
+        words (List[str]): list of words
+        tags (List[str]): list of tags
+        open_class_tags (List[str]): list of open class tags
+        tag_counts (Dict[str, int]): list of tag counts
+        transition_probabilities (_type_): list of transition probabilities
+        transition_matrix_labels (_type_): list of transition matric labels
+        emission_probabilities (_type_): list of emission probabilities
+        emission_matrix_row_labels (_type_): list of emission matrix row labels
+        emission_matrix_col_labels (_type_): list of emission matrix column labels
+        smoothing_parameter (_type_): smoothing parameter for laplace smoothing
+    """
     with open(out_file_path, mode="w") as output_file:
         out = dict()
         out["tags"] = tags
+        out["open_class_tags"] = open_class_tags
         out["words"] = words
         out["tag_counts"] = tag_counts
+        out["smoothing_parameter"] = smoothing_parameter
         out["transition_probabilities"] = transition_probabilities.tolist()
         out["transition_matrix_labels"] = transition_matrix_labels
         out["emission_probabilities"] = emission_probabilities.tolist()
@@ -124,17 +145,6 @@ def count_occurrences(train_document: List[List[str]]):
             else:
                 tag_tag_counts[prev_tag] = {tag: 1}
 
-            # If this is the last word/tag pair, end add count for END_TAG
-            # TODO: Is it needed?
-            # if idx == sentence_last_idx:
-            #     if tag not in tag_tag_counts:
-            #         tag_tag_counts[tag] = {END_TAG: 1}
-
-            #     if END_TAG not in tag_tag_counts[tag]:
-            #         tag_tag_counts[tag][END_TAG] = 1
-            #     else:
-            #         tag_tag_counts[tag][END_TAG] +=1
-
             prev_tag = tag
 
     return (tag_counts, tag_tag_counts, word_tag_counts)
@@ -146,6 +156,7 @@ def calculate_probabilities(
     tag_counts: Dict[str, int],
     tag_tag_counts: Dict[str, Dict[str, int]],
     word_tag_counts: Dict[str, Dict[str, int]],
+    smoothing_parameter: float,
 ):
     # Create row and column headers for access
     # Transition Matric Labels (same for both row and column)
@@ -183,9 +194,9 @@ def calculate_probabilities(
             if col_tag not in tag_tag_counts[row_tag]:
                 transition_probabilities[row_idx][col_idx] = 0.0
             else:
-                # TODO: Check this, why to add total tag count
-                transition_probabilities[row_idx][col_idx] = tag_tag_counts[row_tag][col_tag] / (
-                    tag_counts[row_tag] + len(tag_counts)
+                # Laplace Smoothing
+                transition_probabilities[row_idx][col_idx] = (tag_tag_counts[row_tag][col_tag] + smoothing_parameter) / (
+                    tag_counts[row_tag] + smoothing_parameter * len(tag_counts)
                 )
 
     return (
@@ -196,6 +207,19 @@ def calculate_probabilities(
         emission_matrix_col_labels,
     )
 
+
+def calculate_open_classes(
+    emission_probabilities, tags, threshold: float = 0.2
+):
+    n_open_tags = int(threshold * len(tags))
+    
+    unqiue_counts = (emission_probabilities != 0).sum(axis=0)
+
+    reverse_sorted_counts = unqiue_counts.argsort()[::-1]
+    open_class_tags_idx = reverse_sorted_counts[:n_open_tags]
+    open_class_tags = list(map(tags.__getitem__, open_class_tags_idx))
+
+    return open_class_tags
 
 
 ###################################################################
@@ -221,20 +245,23 @@ def main(input_file: str):
         emission_probabilities,
         emission_matrix_row_labels,
         emission_matrix_col_labels,
-    ) = calculate_probabilities(tags, words, tag_counts, tag_tag_counts, word_tag_counts)
+    ) = calculate_probabilities(tags, words, tag_counts, tag_tag_counts, word_tag_counts, SMOOTHING_PARAMETER)
 
+    open_class_tags = calculate_open_classes(emission_probabilities, tags, OPEN_CLASS_PRECENT)
 
     # Save the model
     write_model(
         MODEL_FILE,
         words,
         tags,
+        open_class_tags,
         tag_counts,
         transition_probabilities,
         transition_matrix_labels,
         emission_probabilities,
         emission_matrix_row_labels,
         emission_matrix_col_labels,
+        SMOOTHING_PARAMETER,
     )
 
 

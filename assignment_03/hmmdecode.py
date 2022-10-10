@@ -3,8 +3,6 @@
 import sys
 import csv
 import json
-from copy import deepcopy
-from typing import List, Dict
 
 import numpy as np
 
@@ -32,6 +30,9 @@ MODEL_FILE = f"{OUTPUT_PATH}/hmmmodel.txt"
 OUTPUT_FILE = f"{OUTPUT_PATH}/hmmoutput.txt"
 
 START_TAG = "<ST@RT$>"
+
+SMOOTHING_PARAMETER = 1.0
+OPEN_CLASS_PRECENT = 1.0
 
 
 ###################################################################
@@ -88,12 +89,14 @@ def accuracy(tagged_true, tagged_preds):
 def viterbi_decoding(
     tags,
     tag_counts,
+    open_class_tags,
     emission_probabilities,
     emission_matrix_row_labels,
     emission_matrix_col_labels,
     transition_probabilities,
     transition_matrix_labels,
     sentence,
+    smoothing_parameter,
 ):
     n_words_in_sentence = len(sentence)
     n_tags = len(tags)
@@ -130,11 +133,14 @@ def viterbi_decoding(
 
     for idx in range(1, n_words_in_sentence):
 
-        for end_tag in tags:
+        word = sentence[idx]
+        tags_to_consider = tags
+        if word not in emission_matrix_row_labels:
+            tags_to_consider = open_class_tags
+
+        for end_tag in tags_to_consider:
 
             for start_tag in tags:
-
-                word = sentence[idx]
 
                 # emission
                 if word not in emission_matrix_row_labels:
@@ -200,13 +206,16 @@ def main(test_file: str, show_accuracy: bool = False, lang: str = None):
     (
         words,
         tags,
+        open_class_tags,
         tag_counts,
+        SMOOTHING_PARAMETER,
         transition_probabilities,
         transition_matrix_labels,
         emission_probabilities,
         emission_matrix_row_labels,
         emission_matrix_col_labels,
     ) = load_model(MODEL_FILE)
+
 
     # Load test file
     test_document = load_document(test_file)
@@ -217,15 +226,18 @@ def main(test_file: str, show_accuracy: bool = False, lang: str = None):
         viterbi_matrix, backtrack_matrix = viterbi_decoding(
             tags,
             tag_counts,
+            open_class_tags,
             emission_probabilities,
             emission_matrix_row_labels,
             emission_matrix_col_labels,
             transition_probabilities,
             transition_matrix_labels,
             sentence,
+            SMOOTHING_PARAMETER,
         )
         output = viterbi_backtrack(tags, viterbi_matrix, backtrack_matrix, sentence)
         predicted_tags.append(output)
+
 
     # Store predictions
     write_output(OUTPUT_FILE, predicted_tags)
