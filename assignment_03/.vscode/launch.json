@@ -35,7 +35,7 @@
             "name": "HMM Decode - Japanese",
             "type": "python",
             "request": "launch",
-            "program": "./resource/lax_decode.py",
+            "program": "./hmmdecode.py",
             "args": ["JAPANESE"],
             "console": "integratedTerminal",
             "justMyCode": true

@@ -118,17 +118,17 @@ def viterbi_decoding(
         if word not in emission_matrix_row_labels:
             em_prob = 1.0
 
-        elif word not in emission_matrix_row_labels or tag not in emission_matrix_col_labels:
+        # as word is already checked, it is already there in emission matrix, just need to check if a corresponding tag exists or not
+        elif tag not in emission_matrix_col_labels:
             em_prob = 0.0
 
         else:
             em_prob = emission_probabilities[emission_matrix_row_labels[word]][emission_matrix_col_labels[tag]]
 
         # Transision Probability
-        if START_TAG not in transition_matrix_labels or tag not in transition_matrix_labels:
+        trans_prob = transition_probabilities[transition_matrix_labels[START_TAG]][transition_matrix_labels[tag]]
+        if trans_prob == -1.0:
             trans_prob = float(1 / (tag_counts[START_TAG] + n_tags))
-        else:
-            trans_prob = transition_probabilities[transition_matrix_labels[START_TAG]][transition_matrix_labels[tag]]
 
         viterbi_matrix[idx][0] = trans_prob * em_prob
 
@@ -137,18 +137,16 @@ def viterbi_decoding(
     for idx in range(1, n_words_in_sentence):
 
         word = sentence[idx]
-        tags_to_consider = tags
-        if word not in emission_matrix_row_labels:
-            tags_to_consider = open_class_tags
+        is_new_word = word not in emission_matrix_row_labels
 
-        for end_tag in tags_to_consider:
+        for end_tag in tags:
 
             for start_tag in tags:
 
                 # emission
-                if word not in emission_matrix_row_labels:
+                if is_new_word:
                     em_prob = 1.0
-                elif word not in emission_matrix_row_labels or end_tag not in emission_matrix_col_labels:
+                elif end_tag not in emission_matrix_col_labels:
                     em_prob = 0.0
                 else:
                     em_prob = emission_probabilities[emission_matrix_row_labels[word]][
@@ -157,15 +155,13 @@ def viterbi_decoding(
                     if em_prob == 0.0:
                         continue
 
-                # set transition key of the beginning of sentence: tag1-tag2 (follow model format)
-                if start_tag not in transition_matrix_labels or end_tag not in transition_matrix_labels:
-                    trans_prob = 1 / (tag_counts[start_tag] + n_tags)
-                else:
-                    trans_prob = transition_probabilities[transition_matrix_labels[start_tag]][
-                        transition_matrix_labels[end_tag]
-                    ]
-                    if trans_prob == 0:
-                        continue
+                trans_prob = transition_probabilities[transition_matrix_labels[start_tag]][
+                    transition_matrix_labels[end_tag]
+                ]
+                if trans_prob == 0:
+                    continue
+                elif trans_prob == -1.0:
+                    trans_prob = smoothing_parameter / (tag_counts[start_tag] + smoothing_parameter * n_tags)
 
                 cumulative_probability = (
                     viterbi_matrix[transition_matrix_labels[start_tag]][idx - 1] * trans_prob * em_prob

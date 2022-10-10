@@ -158,6 +158,8 @@ def calculate_probabilities(
     word_tag_counts: Dict[str, Dict[str, int]],
     smoothing_parameter: float,
 ):
+    n_tags = len(tags)
+
     # Create row and column headers for access
     # Transition Matric Labels (same for both row and column)
     transition_matrix_labels = {tag: i for i, tag in enumerate(tags)}
@@ -192,12 +194,12 @@ def calculate_probabilities(
     for row_tag, row_idx in transition_matrix_labels.items():
         for col_tag, col_idx in transition_matrix_labels.items():
             if col_tag not in tag_tag_counts[row_tag]:
-                transition_probabilities[row_idx][col_idx] = 0.0
+                transition_probabilities[row_idx][col_idx] = -1.0
             else:
                 # Laplace Smoothing
-                transition_probabilities[row_idx][col_idx] = (tag_tag_counts[row_tag][col_tag] + smoothing_parameter) / (
-                    tag_counts[row_tag] + smoothing_parameter * len(tag_counts)
-                )
+                transition_probabilities[row_idx][col_idx] = (
+                    tag_tag_counts[row_tag][col_tag] + smoothing_parameter
+                ) / (tag_counts[row_tag] + smoothing_parameter * len(tag_counts))
 
     return (
         transition_probabilities,
