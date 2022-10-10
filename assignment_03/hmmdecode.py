@@ -56,13 +56,17 @@ def write_output(output_file_path: str, predicteds_tags: str):
 
 
 def load_model(model_path: str):
+    """Load the model file to respective objects
+    """
     model_data = None
     with open(model_path, mode="r") as model_file:
         model_data = json.load(model_file)
     return (
         model_data["words"],
         model_data["tags"],
+        model_data["open_class_tags"],
         model_data["tag_counts"],
+        model_data["smoothing_parameter"],
         np.array(model_data["transition_probabilities"]),
         model_data["transition_matrix_labels"],
         np.array(model_data["emission_probabilities"]),
