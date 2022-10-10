@@ -158,8 +158,6 @@ def calculate_probabilities(
     word_tag_counts: Dict[str, Dict[str, int]],
     smoothing_parameter: float,
 ):
-    n_tags = len(tags)
-
     # Create row and column headers for access
     # Transition Matric Labels (same for both row and column)
     transition_matrix_labels = {tag: i for i, tag in enumerate(tags)}
