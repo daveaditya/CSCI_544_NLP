@@ -32,7 +32,6 @@ OUTPUT_FILE = f"{OUTPUT_PATH}/hmmoutput.txt"
 START_TAG = "<ST@RT$>"
 
 SMOOTHING_PARAMETER = 1.0
-OPEN_CLASS_PRECENT = 1.0
 
 
 ###################################################################
