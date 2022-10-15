@@ -13,7 +13,8 @@ import numpy as np
 
 
 DATA_PATH = "./data"
-OUTPUT_PATH = "./submission"
+MODEL_PATH = "./model"
+OUTPUT_PATH = "."
 DATASET_FILES = {
     "ITALIAN": {
         "TRAIN": f"{DATA_PATH}/it_isdt_train_tagged.txt",
@@ -26,7 +27,7 @@ DATASET_FILES = {
         "DEV_TAGGED": f"{DATA_PATH}/ja_gsd_dev_tagged.txt",
     },
 }
-MODEL_FILE = f"{OUTPUT_PATH}/hmmmodel.txt"
+MODEL_FILE = f"{MODEL_PATH}/hmmmodel.txt"
 OUTPUT_FILE = f"{OUTPUT_PATH}/hmmoutput.txt"
 
 START_TAG = "<ST@RT$>"
