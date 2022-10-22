@@ -1,35 +1,45 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "PercepLearn",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/perceplearn.py",
-            "args": ["${workspaceFolder}/data/train-labeled.txt"],
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
-            "name": "PercepClassify - Vanilla",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/percepclassify.py",
-            "args": ["${workspaceFolder}/model/vanillamodel.txt", "${workspaceFolder}/data/dev-text.txt"],
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
-            "name": "PercepClassify - Averaged",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/percepclassify.py",
-            "args": ["${workspaceFolder}/model/averagedmodel.txt", "${workspaceFolder}/data/dev-text.txt"],
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PercepLearn",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/perceplearn.py",
+      "args": ["${workspaceFolder}/data/train-labeled.txt"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "PercepClassify - Vanilla",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/percepclassify.py",
+      "args": [
+        "${workspaceFolder}/model/vanillamodel.txt",
+        "${workspaceFolder}/data/dev-text.txt",
+        "--true",
+        "${workspaceFolder}/data/dev-key.txt"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "PercepClassify - Averaged",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/percepclassify.py",
+      "args": [
+        "${workspaceFolder}/model/averagedmodel.txt",
+        "${workspaceFolder}/data/dev-text.txt",
+        "--true",
+        "${workspaceFolder}/data/dev-key.txt"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
 }
