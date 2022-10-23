@@ -9,7 +9,7 @@ OUTPUT_PATH = "./output"
 # Model File names
 VANILLA_MODEL_FILENAME = "vanillamodel.txt"
 AVERAGED_MODEL_FILENAME = "averagedmodel.txt"
-OUTPUT_FILENAME = "output.txt"
+OUTPUT_FILENAME = "percepoutput.txt"
 
 # Class Identifiers
 TRUTHFUL = "True"
