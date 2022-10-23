@@ -9,7 +9,6 @@ from tfidf import *
 from utils import *
 
 
-rng = np.random.default_rng(seed=RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
 
@@ -57,11 +56,11 @@ def main(input_file_path: str):
     y_train_truthfulness = np.where(cleaned_data[:, TRUTHFULNESS_TARGET_COL] == TRUTHFUL, 1, -1)
 
     vanilla_perceptron_sentiment = VanillaPerceptron(
-        max_iterations=1300,
+        max_iterations=1327,
         learning_rate=0.815,
         shuffle=True,
         score_func=partial(calculate_f1_score, average="macro"),
-        rng=rng,
+        rng=np.random.default_rng(seed=RANDOM_SEED),
         debug=True,
         debug_at=50,
     )
@@ -69,11 +68,12 @@ def main(input_file_path: str):
     vanilla_perceptron_sentiment_data = vanilla_perceptron_sentiment.export()
 
     vanilla_perceptron_truthfulness = VanillaPerceptron(
-        max_iterations=834,
-        learning_rate=20e-2,
+        max_iterations=281,
+        learning_rate=3.2,
         shuffle=True,
+        class_weights={DECEPTIVE: 1.04275, TRUTHFUL: 1.0005},
         score_func=partial(calculate_f1_score, average="macro"),
-        rng=rng,
+        rng=np.random.default_rng(seed=RANDOM_SEED),
         debug=True,
         debug_at=50,
     )
@@ -92,7 +92,7 @@ def main(input_file_path: str):
         learning_rate=3,
         shuffle=True,
         score_func=partial(calculate_f1_score, average="macro"),
-        rng=rng,
+        rng=np.random.default_rng(seed=RANDOM_SEED),
         debug=True,
         debug_at=50,
     )
@@ -100,11 +100,12 @@ def main(input_file_path: str):
     averaged_perceptron_sentiment_data = averaged_perceptron_sentiment.export()
 
     averaged_perceptron_truthfulness = AveragedPerceptron(
-        max_iterations=160,
+        max_iterations=197,
         learning_rate=815e-2,
         shuffle=True,
+        class_weights={-1:1.0085, 1:1.0},
         score_func=partial(calculate_f1_score, average="macro"),
-        rng=rng,
+        rng=np.random.default_rng(seed=RANDOM_SEED),
         debug=True,
         debug_at=50,
     )

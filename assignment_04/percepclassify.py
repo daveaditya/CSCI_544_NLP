@@ -11,10 +11,6 @@ from tfidf import *
 from utils import *
 
 
-rng = np.random.default_rng(seed=RANDOM_SEED)
-np.random.seed(RANDOM_SEED)
-
-
 def main(model_file_path: str, input_file_path: str, true_file_path: Optional[str] = None):
 
     data = load_data(input_file_path, type="DEV")
