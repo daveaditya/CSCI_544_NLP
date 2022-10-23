@@ -6,7 +6,7 @@ import numpy as np
 
 from constants import *
 from data_cleaning import *
-from preceptron import *
+from perceptron import *
 from tfidf import *
 from utils import *
 
@@ -49,6 +49,9 @@ def main(model_file_path: str, input_file_path: str, true_file_path: Optional[st
         cleaned_data[:, col] = temp_data.copy()
 
 
+    dev_tokenized = tokenize(cleaned_data[:, DEV_DATA_COL])
+
+    # Load Model
     tf_idf_model_data, sentiment_model_data, truthfulness_model_data = load_model(
         model_file_path
     )
@@ -56,36 +59,36 @@ def main(model_file_path: str, input_file_path: str, true_file_path: Optional[st
     tf_idf_saved_model = TfIdf()
     tf_idf_saved_model.load(tf_idf_model_data)
 
-    X_tf_idf_vectors = tf_idf_saved_model.transform(cleaned_data)
-
+    X_dev = tf_idf_saved_model.transform(dev_tokenized)
 
     sentiment_model = None
     if sentiment_model_data["type"] == TYPE_VANILLA_PERPCETRON:
-        sentiment_model = VanillaPerceptron(sentiment_model_data["max_iterations"])
+        sentiment_model = VanillaPerceptron()
     elif sentiment_model_data["type"] == TYPE_AVERAGED_PERCEPTRON:
-        sentiment_model = AveragedPerceptron(sentiment_model_data["max_iterations"])
+        sentiment_model = AveragedPerceptron()
     sentiment_model.load(sentiment_model_data)
 
     truthfulness_model = None
     if truthfulness_model_data["type"] == TYPE_VANILLA_PERPCETRON:
-        truthfulness_model = VanillaPerceptron(truthfulness_model_data["max_iterations"])
+        truthfulness_model = VanillaPerceptron()
     elif truthfulness_model_data["type"] == TYPE_AVERAGED_PERCEPTRON:
-        truthfulness_model = AveragedPerceptron(truthfulness_model_data["max_iterations"])
+        truthfulness_model = AveragedPerceptron()
     truthfulness_model.load(truthfulness_model_data)
 
-    y_pred_sentiment = sentiment_model.predict(X_tf_idf_vectors)
+    # Give actual labels
+    y_pred_sentiment = sentiment_model.predict(X_dev)
     y_pred_sentiment = np.where(y_pred_sentiment == -1, NEGATIVE, POSITIVE)
 
-    y_pred_truthfulness = truthfulness_model.predict(X_tf_idf_vectors)
+    y_pred_truthfulness = truthfulness_model.predict(X_dev)
     y_pred_truthfulness = np.where(y_pred_truthfulness == -1, DECEPTIVE, TRUTHFUL)
 
     if true_file_path:
         true_data = load_data(true_file_path, type="KEY")
 
         f1_sentiment = calculate_f1_score(true_data[:,SENTIMENT_TARGET_COL], y_pred_sentiment, average="macro")
-        f1_truthfull = calculate_f1_score(true_data[:,TRUTHFULNESS_TARGET_COL], y_pred_truthfulness, average="macro")
+        f1_truthful = calculate_f1_score(true_data[:,TRUTHFULNESS_TARGET_COL], y_pred_truthfulness, average="macro")
 
-        print("Avg. F1: ", np.mean(f1_sentiment, f1_truthfull))
+        print("Avg. F1: ", np.mean([f1_sentiment, f1_truthful]))
 
     output = list()
     for (id, truthfulness, sentiment) in zip(

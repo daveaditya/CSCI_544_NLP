@@ -4,7 +4,7 @@ import numpy as np
 
 from constants import *
 from data_cleaning import *
-from preceptron import *
+from perceptron import *
 from tfidf import *
 from utils import *
 
@@ -52,40 +52,34 @@ def main(input_file_path: str):
     tf_idf_model.fit(train_tokenized)
     tf_idf_model_data = tf_idf_model.export()
 
-    X_train_tf_idf_vectors = tf_idf_model.transform(train_tokenized)
+    X_train = tf_idf_model.transform(train_tokenized)
     y_train_sentiment = np.where(cleaned_data[:, SENTIMENT_TARGET_COL] == POSITIVE, 1, -1)
     y_train_truthfulness = np.where(cleaned_data[:, TRUTHFULNESS_TARGET_COL] == TRUTHFUL, 1, -1)
 
     vanilla_perceptron_sentiment = VanillaPerceptron(
-        max_iterations=632,
+        max_iterations=1300,
         learning_rate=0.815,
-        tolerance=1e-8,
         shuffle=True,
-        val_ratio=0.0,
+        score_func=partial(calculate_f1_score, average="macro"),
+        rng=rng,
         debug=True,
         debug_at=50,
-        score_func=partial(calculate_f1_score, average="macro"),
     )
-    vanilla_perceptron_sentiment.fit(X_train_tf_idf_vectors, y_train_sentiment)
-
+    vanilla_perceptron_sentiment.fit(X_train, y_train_sentiment)
     vanilla_perceptron_sentiment_data = vanilla_perceptron_sentiment.export()
 
     vanilla_perceptron_truthfulness = VanillaPerceptron(
-        max_iterations=533,
-        learning_rate=0.815,
-        tolerance=1e-8,
+        max_iterations=834,
+        learning_rate=20e-2,
         shuffle=True,
-        val_ratio=0.0,
+        score_func=partial(calculate_f1_score, average="macro"),
+        rng=rng,
         debug=True,
         debug_at=50,
-        score_func=partial(calculate_f1_score, average="macro"),
     )
-    vanilla_perceptron_truthfulness.fit(
-        X_train_tf_idf_vectors,
-        y_train_truthfulness,
-    )
-
+    vanilla_perceptron_truthfulness.fit(X_train, y_train_truthfulness)
     vanilla_perceptron_truthfulness_data = vanilla_perceptron_truthfulness.export()
+
 
     vanilla_model_file_data = {
         "tf_idf_model": tf_idf_model_data,
@@ -94,30 +88,28 @@ def main(input_file_path: str):
     }
 
     averaged_perceptron_sentiment = AveragedPerceptron(
-        max_iterations=1648,
-        learning_rate=0.815,
-        tolerance=1e-8,
+        max_iterations=699,
+        learning_rate=3,
         shuffle=True,
-        val_ratio=0.0,
+        score_func=partial(calculate_f1_score, average="macro"),
+        rng=rng,
         debug=True,
         debug_at=50,
-        score_func=partial(calculate_f1_score, average="macro"),
     )
-    averaged_perceptron_sentiment.fit(X_train_tf_idf_vectors, y_train_sentiment)
+    averaged_perceptron_sentiment.fit(X_train, y_train_sentiment)
     averaged_perceptron_sentiment_data = averaged_perceptron_sentiment.export()
 
     averaged_perceptron_truthfulness = AveragedPerceptron(
-        max_iterations=941,
-        learning_rate=0.815,
-        tolerance=1e-8,
+        max_iterations=160,
+        learning_rate=815e-2,
         shuffle=True,
-        val_ratio=0.0,
+        score_func=partial(calculate_f1_score, average="macro"),
+        rng=rng,
         debug=True,
         debug_at=50,
-        score_func=partial(calculate_f1_score, average="macro"),
     )
     averaged_perceptron_truthfulness.fit(
-        X_train_tf_idf_vectors,
+        X_train,
         y_train_truthfulness,
     )
     averaged_perceptron_truthfulness_data = averaged_perceptron_truthfulness.export()

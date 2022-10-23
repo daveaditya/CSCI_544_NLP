@@ -6,15 +6,18 @@ from typing import List, Tuple, Any
 import numpy as np
 import numpy.typing as npt
 
+from constants import RANDOM_SEED
 
+
+# Load Data
 # Load Data
 def load_data(input_file_path: str, type: str = "TRAIN") -> npt.NDArray:
     input_data = list()
-    regex = "(\w*) (\w*) (\w*) (.*)\n?"
+    regex = r"(\w*) (\w*) (\w*) (.*)\n?"
     if type == "DEV":
-        regex = "(\w*) (.*)\n?"
+        regex = r"(\w*) (.*)\n?"
     elif type == "KEY":
-        regex = "(\w*) (\w*) (\w*)\n?"
+        regex = r"(\w*) (\w*) (\w*)\n?"
     input_regex = re.compile(regex)
     with open(input_file_path, mode="r") as input_file:
         for line in input_file:
@@ -88,22 +91,35 @@ def calculate_scores(y_true, y_pred, title: str):
     print("---------------------------------------------------------")
 
 
-def train_test_split(X: npt.NDArray, y: npt.NDArray, test_size: float = 0.2):
-    if 0 == test_size:
-        return X, None, y, None
-
+def train_test_split(
+    X: npt.NDArray,
+    y_sentiment: npt.NDArray,
+    y_truthfulness: npt.NDArray,
+    test_size: float = 0.2,
+    rng=np.random.default_rng(seed=RANDOM_SEED),
+):
     n_max = X.shape[0]
     sample = int((1 - test_size) * n_max)
 
     # Shuffle the data
-    all_idx = np.random.permutation(n_max)
+    all_idx = np.arange(n_max)
+    rng.shuffle(all_idx)
+
     train_idx, test_idx = all_idx[:sample], all_idx[sample:]
 
-    X_train, X_test, y_train, y_test = (
+    X_train, X_test, y_train_sentiment, y_test_sentiment, y_train_truthfulness, y_test_truthfulness = (
         X[train_idx],
         X[test_idx],
-        y[train_idx],
-        y[test_idx],
+        y_sentiment[train_idx],
+        y_sentiment[test_idx],
+        y_truthfulness[train_idx],
+        y_truthfulness[test_idx],
     )
 
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train_sentiment, y_test_sentiment, y_train_truthfulness, y_test_truthfulness
+
+
+
+# Learning Rate Scheduler
+def learning_rate_scheduler(learning_rate: float, epoch: int, decay: float = 1e-2):
+    return learning_rate * 1 / (1 + decay * epoch)
