@@ -66,7 +66,7 @@ class VanillaPerceptron:
                     if self.class_weights is None:
                         self.weights = self.weights + y_true * x * self.learning_rate
                     else:
-                        self.weights = self.weights + y_true * x * self.class_weights[y_true] * self.learning_rate
+                        self.weights = self.weights + y_true * x * self.learning_rate * self.class_weights[y_true]
                     self.bias = self.bias + y_true
 
             if X_val is not None and y_val is not None:
@@ -92,7 +92,7 @@ class VanillaPerceptron:
             if self.learning_rate_scheduler:
                 learning_rate = self.learning_rate_scheduler(learning_rate, n_epoch)
 
-        # Set the best weights and bias found
+        # Set the best weights and bias found if Val provided
         self.best_epoch = best_epoch
         self.weights = best_weights
         self.bias = best_bias
@@ -112,7 +112,7 @@ class VanillaPerceptron:
     ):
         return {
             "type": self.type,
-            "max_iterations": self.best_epoch,
+            "max_iterations": self.max_iterations,
             "weights": self.weights.tolist(),
             "bias": float(self.bias),
             "best_epoch": self.best_epoch,
@@ -171,7 +171,7 @@ class AveragedPerceptron:
 
         best_val_score = -1
         best_epoch = 0
-        best_weights = current_weights
+        best_weights = current_weights.copy()
         best_bias = current_bias
         best_cache = self.cache
 
@@ -219,21 +219,17 @@ class AveragedPerceptron:
 
                 if self.debug and (n_epoch == self.max_iterations or n_epoch % self.debug_at == 0):
                     print("Epoch #", n_epoch, " Train: ", train_score, " Val: ", val_score)
-            else:
-                best_epoch = n_epoch
-                best_weights = self.weights
-                best_bias = self.bias
-                best_cache = self.cache
 
             # Update learning rate
             if self.learning_rate_scheduler:
                 learning_rate = self.learning_rate_scheduler(learning_rate, n_epoch)
 
         # Set best epochs, weight, bias and cache
-        self.best_epoch = best_epoch
-        self.weights = best_weights
-        self.bias = best_bias
-        self.cache = best_cache
+        if  X_val is not None and y_val is not None:
+            self.best_epoch = best_epoch
+            self.weights = best_weights
+            self.bias = best_bias
+            self.cache = best_cache
 
     def _activation(self, x: npt.NDArray):
         return np.dot(self.weights, x) + self.bias
